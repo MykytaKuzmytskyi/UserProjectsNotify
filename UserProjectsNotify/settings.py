@@ -29,7 +29,6 @@ DEBUG = os.environ.get("DJANGO_DEBUG")
 
 ALLOWED_HOSTS = []
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -43,6 +42,8 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "user.apps.UserConfig",
 ]
+
+AUTH_USER_MODEL = "user.User"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
