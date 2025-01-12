@@ -1,5 +1,10 @@
-from django.urls import path
+from rest_framework.routers import DefaultRouter
 
-urlpatterns = []
+from user.views import ProjectViewSet
+
+router = DefaultRouter()
+
+router.register("projects", ProjectViewSet, basename="projects")
+urlpatterns = router.urls
 
 app_name = "user"
