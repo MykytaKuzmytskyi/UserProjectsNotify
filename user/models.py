@@ -1,5 +1,5 @@
 from django.contrib.auth.models import AbstractUser
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
@@ -38,6 +38,8 @@ class NotificationTemplate(models.Model):
     )
     name = models.CharField(max_length=32, blank=True, null=True)
     txt = models.CharField(max_length=255, blank=True, null=True)
+
+    translations = GenericRelation("TranslationString")
 
     class Meta:
         db_table = "notification_template"
@@ -78,30 +80,6 @@ class UserNotification(models.Model):
 
     class Meta:
         db_table = "user_notification"
-
-    def get_processed_translation(self):
-        translation = (
-            TranslationString.objects.filter(
-                object_id=self.notification_template.id, language=self.user.language
-            ).first()
-            or TranslationString.objects.filter(
-                object_id=self.notification_template.id, language__title="EN"
-            ).first()
-        )
-
-        options = UserNotificationOption.objects.filter(user_notification=self).values(
-            "field_id", "txt"
-        )
-        translation_text = translation.text
-
-        for option in options:
-            placeholder = f"{{{option['field_id']}}}"
-            translation_text = translation_text.replace(placeholder, option["txt"])
-
-        if translation.language.title != self.user.language.title:
-            translation_text += " (translation missing, English version used)"
-
-        return translation_text
 
 
 class UserNotificationOption(models.Model):

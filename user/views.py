@@ -1,3 +1,4 @@
+from django.db.models import Prefetch
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, mixins
 from rest_framework.decorators import action
@@ -6,7 +7,12 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from user.models import Project, NotificationTemplate, UserNotification
+from user.models import (
+    Project,
+    NotificationTemplate,
+    UserNotification,
+    TranslationString,
+)
 from user.notification import NotificationService
 from user.serializers import (
     ProjectSerializer,
@@ -53,8 +59,19 @@ class ListNotificationView(
     filterset_fields = ["status", "notification_type", "notification_template__id"]
 
     def get_queryset(self):
-        return UserNotification.objects.select_related("notification_template").filter(
-            user=self.request.user
+        user_language_id = self.request.user.language_id  # ID мови користувача
+        return (
+            UserNotification.objects.select_related("notification_template")
+            .prefetch_related(
+                Prefetch(
+                    "notification_template__translations",
+                    queryset=TranslationString.objects.filter(
+                        language_id=user_language_id
+                    ),
+                    to_attr="prefetched_translations",
+                )
+            )
+            .filter(user=self.request.user)
         )
 
     @action(detail=False, methods=["patch"])

@@ -34,7 +34,22 @@ class UserNotificationSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_txt(obj):
-        return obj.get_processed_translation()
+        notification_template = obj.notification_template
+        if (
+            hasattr(notification_template, "prefetched_translations")
+            and notification_template.prefetched_translations
+        ):
+            translation = notification_template.prefetched_translations[0]
+            translation_text = translation.text
+        else:
+            translation_text = notification_template.txt
+
+        options = obj.usernotificationoption_set.values("field_id", "txt")
+        for option in options:
+            placeholder = f"{{{option['field_id']}}}"
+            translation_text = translation_text.replace(placeholder, option["txt"])
+
+        return translation_text
 
 
 class UpdateStatusSerializer(serializers.Serializer):
