@@ -73,6 +73,30 @@ class UserNotification(models.Model):
     class Meta:
         db_table = 'user_notification'
 
+    def get_processed_translation(self):
+        translation = TranslationString.objects.filter(
+            object_id=self.notification_template.id,
+            language=self.user.language
+        ).first() or TranslationString.objects.filter(
+            object_id=self.notification_template.id,
+            language__title='EN'
+        ).first()
+
+        if not translation:
+            return "Translation missing"
+
+        options = UserNotificationOption.objects.filter(user_notification=self).values('field_id', 'txt')
+        translation_text = translation.text
+
+        for option in options:
+            placeholder = f"{{{option['field_id']}}}"
+            translation_text = translation_text.replace(placeholder, option['txt'])
+
+        if translation.language.title != self.user.language.title:
+            translation_text += " (translation missing, English version used)"
+
+        return translation_text
+
 
 class UserNotificationOption(models.Model):
     user_notification = models.ForeignKey(UserNotification, models.DO_NOTHING, blank=True, null=True)
