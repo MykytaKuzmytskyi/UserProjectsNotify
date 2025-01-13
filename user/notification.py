@@ -1,26 +1,27 @@
 import datetime
 
 from django.db import transaction
-from user.models import UserNotificationSetting, UserNotification, UserNotificationOption, User, NotificationTemplate
+from user.models import (
+    UserNotificationSetting,
+    UserNotification,
+    UserNotificationOption,
+    User,
+    NotificationTemplate,
+)
 
 
 class NotificationService:
     @staticmethod
-    def create_notification(user: User, notification_template: NotificationTemplate, options=None):
-        """
-        Створює нотифікацію для користувача, якщо вона дозволена в налаштуваннях.
-
-        :param user: екземпляр моделі User
-        :param notification_template: екземпляр моделі NotificationTemplate
-        :param options: список опцій для нотифікації (UserNotificationOption)
-        :return: екземпляр UserNotification або None, якщо нотифікація не створена
-        """
+    def create_notification(
+        user: User, notification_template: NotificationTemplate, options=None
+    ):
         try:
-            settings = UserNotificationSetting.objects.get(user=user, notification_template=notification_template)
+            settings = UserNotificationSetting.objects.get(
+                user=user, notification_template=notification_template
+            )
         except UserNotificationSetting.DoesNotExist:
             return None
 
-        notification_type = None
         if settings.push_notification:
             notification_type = 1
         elif settings.system_notification:
@@ -35,7 +36,7 @@ class NotificationService:
                     notification_template=notification_template,
                     notification_type=notification_type,
                     status=0,
-                    created=datetime.datetime.now()
+                    created=datetime.datetime.now(),
                 )
 
                 if options:
@@ -54,5 +55,7 @@ class NotificationService:
         if not isinstance(new_status, int) or new_status not in [0, 1]:
             raise ValueError("Invalid status value. Status must be 0 or 1.")
 
-        updated_count = UserNotification.objects.filter(id__in=notification_ids).update(status=new_status)
+        updated_count = UserNotification.objects.filter(id__in=notification_ids).update(
+            status=new_status
+        )
         return updated_count
